@@ -16,7 +16,7 @@ describe('Cart notification normalization', () => {
   );
   const context = new RmqContext([{}, channel, 'cart.projection.updated']);
   const source = {
-    producer: 'product_srv_v2',
+    producer: 'product_srv',
     aggregateType: 'product',
     aggregateUuid: randomUUID(),
     version: 2,

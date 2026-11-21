@@ -32,10 +32,10 @@
 Store API возвращает offers[].records[]: uuid, article, clarifications[]
 (position/value) и inventory (recordUuid, quantity, reserved, available, version).
 Артикул и остаток принадлежат учетной записи. У товара/связи варианта их нет.
-Каталог — product_srv_v2; нельзя обращаться к прежнему product API или
+Каталог — product_srv; нельзя обращаться к прежнему product API или
 возвращать старый offer_inventory контракт.
 
-AMQP_PRODUCT_SRV_COMMAND_QUEUE должен адресовать текущий product_srv_v2.
+AMQP_PRODUCT_SRV_COMMAND_QUEUE должен адресовать текущий product_srv.
 Storefront /v1/products и /v1/offers/:uuid передают records[] для выбора
 конкретной учетной записи клиентом. Cart находится в отдельной ветке cart_srv/v1; Order не реализован.
 
@@ -47,7 +47,7 @@ productShowing/variantShowing=true и availableMin=1. StoreProductGateway вал
 его и передает в Store для списка и карточки. Входящий search передается в тот же
 query и использует FTS Store, включая артикулы. Публичный HTTP не разрешает
 переопределить обязательные условия показа. Дополнительно BFF проверяет статусы
-каталога у product_srv_v2. Политика витрины не зашивается в общий Store service.
+каталога у product_srv. Политика витрины не зашивается в общий Store service.
 STOREFRONT_SHOP_UUID обязателен и проверяется как UUID при запуске gateway.
 
 Для списка и карточки Client gateway запрашивает Product с
