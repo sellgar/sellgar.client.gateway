@@ -133,6 +133,47 @@ describe(ProductsService.name, () => {
     expect(catalog.getByUuid).toHaveBeenNthCalledWith(1, product.uuid, { withEmptyProperties: false });
     expect(catalog.getByUuid).toHaveBeenNthCalledWith(2, product.uuid, { withEmptyProperties: false });
   });
+  it('preserves unit names and symbols in product and variant properties', async () => {
+    const { service, catalog } = setup();
+    const properties: ProductEntity['properties'] = [
+      {
+        propertyCode: 'width',
+        required: false,
+        multiple: false,
+        sortOrder: 0,
+        property: {
+          code: 'width',
+          name: 'Ширина',
+          kind: 'DECIMAL',
+          description: null,
+          unitCode: 'mm',
+          unit: { code: 'mm', name: 'Миллиметр', symbol: 'мм' },
+          options: [],
+        },
+        values: [
+          {
+            valueDecimal: '71.6',
+            valueText: null,
+            valueInteger: null,
+            valueBoolean: null,
+            valueDate: null,
+            valueOptionCode: null,
+          },
+        ],
+      },
+    ];
+    catalog.getByUuid.mockResolvedValue({
+      ...product,
+      properties,
+      variants: [{ ...product.variants[0], properties }],
+    });
+
+    const result = await service.findOfferByUuid('offer');
+    for (const owner of [result.offer.product, result.offer.variant]) {
+      expect(owner.properties).toEqual(properties);
+    }
+    expect((await service.findAll({})).data[0].product.properties).toEqual(properties);
+  });
   it('passes every Store category path through the public offer contract', async () => {
     const { service, store } = setup();
     const categories = [
