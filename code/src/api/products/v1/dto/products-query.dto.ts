@@ -1,7 +1,8 @@
+import { CursorQueryDto } from '@sellgar/pagination';
 import { Expose, Transform } from 'class-transformer';
 import { IsOptional, IsString, IsUUID, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
-export class ProductsQueryDto {
+export class ProductsQueryDto extends CursorQueryDto {
   @Expose()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsOptional()

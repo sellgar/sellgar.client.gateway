@@ -1,5 +1,6 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { ConfigService } from '@nestjs/config';
+
 import { ProductsService } from './products.service';
 import { ProductGateway } from './gateway/product.gateway';
 import { StoreProductGateway } from './gateway/store-product.gateway';
@@ -59,7 +60,7 @@ describe(ProductsService.name, () => {
     const store = {
       findOffersAll: jest
         .fn<StoreProductGateway['findOffersAll']>()
-        .mockResolvedValue({ data: [offer], meta: { totalRows: 1 } }),
+        .mockResolvedValue({ items: [offer], meta: { limit: 50, nextToken: null } }),
       findOfferByUuid: jest
         .fn<StoreProductGateway['findOfferByUuid']>()
         .mockResolvedValue({ offer, siblingOffers: [offer], categories: [] }),
@@ -83,11 +84,11 @@ describe(ProductsService.name, () => {
   it('returns selectable accounting records with their own article and stock', async () => {
     const { service, catalog } = setup();
     const result = await service.findAll({});
-    expect(result.data[0].records).toEqual([record]);
-    expect(result.data[0].priceRange).toEqual(offer.priceRange);
-    expect(result.data[0]).not.toHaveProperty('currentPrice');
-    expect(result.data[0]).not.toHaveProperty('article');
-    expect(result.data[0]).not.toHaveProperty('inventory');
+    expect(result.items[0].records).toEqual([record]);
+    expect(result.items[0].priceRange).toEqual(offer.priceRange);
+    expect(result.items[0]).not.toHaveProperty('currentPrice');
+    expect(result.items[0]).not.toHaveProperty('article');
+    expect(result.items[0]).not.toHaveProperty('inventory');
     expect(catalog.getByUuid).toHaveBeenCalledTimes(1);
     expect(catalog.getByUuid).toHaveBeenCalledWith('product', { withEmptyProperties: false });
   });
@@ -98,7 +99,7 @@ describe(ProductsService.name, () => {
     expect(result.siblingOffers).toEqual([]);
     expect(result.categories).toEqual([]);
     catalog.getByUuid.mockResolvedValue({ ...product, variants: [{ ...product.variants[0], status: 'archived' }] });
-    expect((await service.findAll({})).data).toEqual([]);
+    expect((await service.findAll({})).items).toEqual([]);
   });
   it('excludes the current offer and preserves the order of the other available variants', async () => {
     const { service, store, catalog } = setup();
@@ -172,7 +173,7 @@ describe(ProductsService.name, () => {
     for (const owner of [result.offer.product, result.offer.variant]) {
       expect(owner.properties).toEqual(properties);
     }
-    expect((await service.findAll({})).data[0].product.properties).toEqual(properties);
+    expect((await service.findAll({})).items[0].product.properties).toEqual(properties);
   });
   it('passes every Store category path through the public offer contract', async () => {
     const { service, store } = setup();
@@ -228,5 +229,15 @@ describe(ProductsService.name, () => {
     } as const;
     expect(store.findOffersAll).toHaveBeenCalledWith(expected);
     expect(store.findOfferByUuid).toHaveBeenCalledWith('offer', expected);
+  });
+  it('preserves continuation when a whole Store page is excluded during composition', async () => {
+    const { service, store, catalog } = setup();
+    store.findOffersAll.mockResolvedValue({ items: [offer], meta: { limit: 1, nextToken: 'next.cursor' } });
+    catalog.getByUuid.mockResolvedValue({ ...product, status: 'archived' });
+    const page = await service.findAll({ limit: 1, nextToken: 'previous.cursor' });
+    expect(page).toEqual({ items: [], meta: { limit: 1, nextToken: 'next.cursor' } });
+    expect(store.findOffersAll).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 1, nextToken: 'previous.cursor', shopUuid }),
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { ProductGateway } from './gateway/product.gateway';
 import { StoreProductGateway } from './gateway/store-product.gateway';
 import { StoreQueryInput } from './gateway/input/store-query.input';
@@ -22,19 +23,19 @@ export class ProductsService {
   ) {}
   async findAll(query: ProductsQueryInput): Promise<PublicProductResult> {
     const offers = await this.storeProductGateway.findOffersAll(this.createStoreQuery(query));
-    const ids = [...new Set(offers.data.map((offer) => offer.productUuid))];
+    const ids = [...new Set(offers.items.map((offer) => offer.productUuid))];
     const products = await Promise.all(
       ids.map((uuid) => this.productGateway.getByUuid(uuid, { withEmptyProperties: false })),
     );
     const byUuid = new Map(products.map((product) => [product.uuid, product]));
     const brands = await this.loadBrands(products);
-    const data = offers.data
+    const items = offers.items
       .map((offer) => {
         const product = byUuid.get(offer.productUuid);
         return product ? this.compose(offer, product, brands.get(product.brandCode) ?? null) : null;
       })
       .filter((offer): offer is PublicOfferCard => offer !== null);
-    return { data, meta: { totalRows: data.length } };
+    return { items, meta: offers.meta };
   }
   async findOfferByUuid(uuid: string, query: ProductsQueryInput = {}): Promise<PublicOfferDetail> {
     const detail = await this.storeProductGateway.findOfferByUuid(uuid, this.createStoreQuery(query));

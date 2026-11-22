@@ -9,7 +9,6 @@ export { RecordClarificationEntity } from './entity/record-clarification-entity'
 export { RecordInventoryEntity } from './entity/record-inventory-entity';
 export { PriceHistoryEntity } from './entity/price-history-entity';
 export { CurrencyEntity } from './entity/currency-entity';
-export { ProductResult } from './entity/product-result';
 export { ProductEntity } from './entity/product-entity';
 export { BrandEntity } from './entity/brand-entity';
 export { VariantEntity } from './entity/variant-entity';

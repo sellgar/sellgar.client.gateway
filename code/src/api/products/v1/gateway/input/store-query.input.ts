@@ -1,4 +1,6 @@
-export interface StoreQueryInput {
+import { CursorQueryDto } from '@sellgar/pagination';
+
+export interface StoreQueryInput extends Partial<CursorQueryDto> {
   search?: string;
   shopUuid?: string;
   productUuid?: string;

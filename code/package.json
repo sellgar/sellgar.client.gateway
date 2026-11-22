@@ -8,7 +8,7 @@
   "scripts": {
     "update": "yarn upgrade-interactive",
     "prebuild": "rm -rf dist tsconfig.build.tsbuildinfo",
-    "build": "yarn prebuild && nest build",
+    "build": "yarn workspace @sellgar/pagination build && yarn prebuild && nest build",
     "start": "nest start",
     "start:dev": "yarn prebuild && nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -18,7 +18,7 @@
     "test:cov": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --experimental-vm-modules --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config env.d.ts/jest-e2e.json",
-    "build:deployment": "nest build && tsc-alias -p tsconfig.build.json"
+    "build:deployment": "yarn workspace @sellgar/pagination build && nest build && tsc-alias -p tsconfig.build.json"
   },
   "dependencies": {
     "@nestjs/axios": "12.0.1",
@@ -28,6 +28,7 @@
     "@nestjs/jwt": "12.0.3",
     "@nestjs/microservices": "12.2.0",
     "@nestjs/platform-express": "12.2.0",
+    "@sellgar/pagination": "0.0.1",
     "amqp-connection-manager": "5.0.1",
     "amqplib": "2.2.0",
     "axios": "1.20.0",
@@ -76,5 +77,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "packageManager": "yarn@4.18.0"
+  "packageManager": "yarn@4.18.0",
+  "workspaces": [
+    "library/*"
+  ]
 }

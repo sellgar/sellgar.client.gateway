@@ -13,7 +13,7 @@ describe('Storefront category query HTTP contract', () => {
   let app: INestApplication;
   const categoryUuid = 'be250838-85f9-41fa-b9f3-99aba3590640';
   const shopUuid = 'c5da1f34-cdf6-4c48-8db0-b183b5accbe9';
-  const send = jest.fn().mockReturnValue(of({ data: [], meta: { totalRows: 0 } }));
+  const send = jest.fn().mockReturnValue(of({ items: [], meta: { limit: 50, nextToken: null } }));
   const policy = {
     shopUuid,
     productStatus: 'active',
@@ -59,7 +59,7 @@ describe('Storefront category query HTTP contract', () => {
       { cmd: 'store.offer.getAll' },
       { query: expect.objectContaining({ ...policy, categoryUuid, brandCode: 'apple', search: 'телефон' }) },
     );
-    expect(result.body).toEqual({ data: [], meta: { totalRows: 0 } });
+    expect(result.body).toEqual({ items: [], meta: { limit: 50, nextToken: null } });
   });
 
   it('preserves the unfiltered contract when categoryUuid is omitted', async () => {

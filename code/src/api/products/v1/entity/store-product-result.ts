@@ -1,6 +1,7 @@
 import { Meta } from './meta';
 import { StoreProductEntity } from './store-product-entity';
+
 export interface StoreProductResult {
-  data: StoreProductEntity[];
+  items: StoreProductEntity[];
   meta: Meta;
 }

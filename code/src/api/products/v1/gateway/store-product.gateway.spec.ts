@@ -1,9 +1,10 @@
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
+
 import { StoreProductGateway } from './store-product.gateway';
 
 describe(StoreProductGateway.name, () => {
-  const send = jest.fn().mockReturnValue(of({ data: [], meta: { totalRows: 0 } }));
+  const send = jest.fn().mockReturnValue(of({ items: [], meta: { limit: 50, nextToken: null } }));
   const gateway = new StoreProductGateway({ send } as unknown as ClientProxy);
   beforeEach(() => send.mockClear());
   it('passes a validated flat query to RMQ for lists and details', async () => {
