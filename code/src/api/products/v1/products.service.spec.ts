@@ -1,4 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
+import { BadGatewayException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { ProductsService } from './products.service';
@@ -92,16 +93,14 @@ describe(ProductsService.name, () => {
     expect(catalog.getByUuid).toHaveBeenCalledTimes(1);
     expect(catalog.getByUuid).toHaveBeenCalledWith('product', { withEmptyProperties: false });
   });
-  it('uses the same accounting records in offer details and excludes an archived catalog variant', async () => {
-    const { service, catalog } = setup();
+  it('uses the same accounting records in offer details', async () => {
+    const { service } = setup();
     const result = await service.findOfferByUuid('offer');
     expect(result.offer.records).toEqual([record]);
     expect(result.siblingOffers).toEqual([]);
     expect(result.categories).toEqual([]);
-    catalog.getByUuid.mockResolvedValue({ ...product, variants: [{ ...product.variants[0], status: 'archived' }] });
-    expect((await service.findAll({})).items).toEqual([]);
   });
-  it('excludes the current offer and preserves the order of the other available variants', async () => {
+  it('excludes only the current offer and preserves the order supplied by Store', async () => {
     const { service, store, catalog } = setup();
     const otherVariants = ['green', 'black', 'archived'].map<ProductEntity['variants'][number]>((uuid) => ({
       ...product.variants[0],
@@ -122,7 +121,7 @@ describe(ProductsService.name, () => {
 
     const result = await service.findOfferByUuid('offer');
 
-    expect(result.siblingOffers.map((item) => item.uuid)).toEqual(['green-offer', 'black-offer']);
+    expect(result.siblingOffers.map((item) => item.uuid)).toEqual(['green-offer', 'black-offer', 'archived-offer']);
   });
   it('requests filled properties for catalog and offer reads', async () => {
     const { service, catalog } = setup();
@@ -202,9 +201,7 @@ describe(ProductsService.name, () => {
       categoryUuid: 'be250838-85f9-41fa-b9f3-99aba3590640',
       search: 'BLUE-S',
       shopUuid,
-      productStatus: 'active',
       productShowing: true,
-      variantStatus: 'active',
       variantShowing: true,
       availableMin: 1,
     } as const;
@@ -221,23 +218,40 @@ describe(ProductsService.name, () => {
     const expected = {
       search: 'BLUE',
       shopUuid,
-      productStatus: 'active',
       productShowing: true,
-      variantStatus: 'active',
       variantShowing: true,
       availableMin: 1,
     } as const;
     expect(store.findOffersAll).toHaveBeenCalledWith(expected);
     expect(store.findOfferByUuid).toHaveBeenCalledWith('offer', expected);
   });
-  it('preserves continuation when a whole Store page is excluded during composition', async () => {
+  it.each(['product', 'variant'])('preserves the Store page without filtering by catalog %s status', async (owner) => {
     const { service, store, catalog } = setup();
     store.findOffersAll.mockResolvedValue({ items: [offer], meta: { limit: 1, nextToken: 'next.cursor' } });
-    catalog.getByUuid.mockResolvedValue({ ...product, status: 'archived' });
+    catalog.getByUuid.mockResolvedValue({
+      ...product,
+      status: owner === 'product' ? 'archived' : 'active',
+      variants: [{ ...product.variants[0], status: owner === 'variant' ? 'archived' : 'active' }],
+    });
     const page = await service.findAll({ limit: 1, nextToken: 'previous.cursor' });
-    expect(page).toEqual({ items: [], meta: { limit: 1, nextToken: 'next.cursor' } });
+    expect(page.items.map((item) => item.uuid)).toEqual([offer.uuid]);
+    expect(page.meta).toEqual({ limit: 1, nextToken: 'next.cursor' });
+    expect((await service.findOfferByUuid(offer.uuid)).offer.uuid).toBe(offer.uuid);
     expect(store.findOffersAll).toHaveBeenCalledWith(
       expect.objectContaining({ limit: 1, nextToken: 'previous.cursor', shopUuid }),
     );
+  });
+  it('reports a broken product reference instead of silently shortening the Store page', async () => {
+    const { service, catalog } = setup();
+    catalog.getByUuid.mockResolvedValue({ ...product, uuid: 'another-product' });
+
+    await expect(service.findAll({})).rejects.toThrow(BadGatewayException);
+  });
+  it('reports a broken variant reference instead of silently dropping an offer', async () => {
+    const { service, catalog } = setup();
+    catalog.getByUuid.mockResolvedValue({ ...product, variants: [] });
+
+    await expect(service.findAll({})).rejects.toThrow(BadGatewayException);
+    await expect(service.findOfferByUuid(offer.uuid)).rejects.toThrow(BadGatewayException);
   });
 });

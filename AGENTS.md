@@ -42,12 +42,13 @@ Storefront /v1/products и /v1/offers/:uuid передают records[] для в
 ## Фильтры витрины
 
 ProductsService берет обязательный shopUuid из STOREFRONT_SHOP_UUID и формирует
-плоский query с productStatus/variantStatus=active,
-productShowing/variantShowing=true и availableMin=1. StoreProductGateway валидирует
+плоский query с productShowing/variantShowing=true и availableMin=1. StoreProductGateway валидирует
 его и передает в Store для списка и карточки. Входящий search передается в тот же
 query и использует FTS Store, включая артикулы. Публичный HTTP не разрешает
-переопределить обязательные условия показа. Дополнительно BFF проверяет статусы
-каталога у product_srv. Политика витрины не зашивается в общий Store service.
+переопределить обязательные условия показа. Gateway не добавляет фильтры активности
+и не отбрасывает элементы ответа по статусам Product/Variant: за исключение архивных
+сущностей из обычных API отвечает сервис-владелец. Отсутствующая обязательная ссылка
+на Product/Variant является ошибкой контракта, а не основанием сократить страницу.
 STOREFRONT_SHOP_UUID обязателен и проверяется как UUID при запуске gateway.
 
 `GET /v1/products?categoryUuid=<UUID>&search=<text>` принимает необязательную категорию.

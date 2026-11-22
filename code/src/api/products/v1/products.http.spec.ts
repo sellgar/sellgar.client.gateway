@@ -16,9 +16,7 @@ describe('Storefront category query HTTP contract', () => {
   const send = jest.fn().mockReturnValue(of({ items: [], meta: { limit: 50, nextToken: null } }));
   const policy = {
     shopUuid,
-    productStatus: 'active',
     productShowing: true,
-    variantStatus: 'active',
     variantShowing: true,
     availableMin: 1,
   };
@@ -67,6 +65,8 @@ describe('Storefront category query HTTP contract', () => {
 
     expect(send).toHaveBeenCalledWith({ cmd: 'store.offer.getAll' }, { query: expect.objectContaining(policy) });
     expect(send.mock.calls[0][1].query.categoryUuid).toBeUndefined();
+    expect(send.mock.calls[0][1].query.productStatus).toBeUndefined();
+    expect(send.mock.calls[0][1].query.variantStatus).toBeUndefined();
   });
 
   it('passes several categories as an array without changing the storefront policy', async () => {

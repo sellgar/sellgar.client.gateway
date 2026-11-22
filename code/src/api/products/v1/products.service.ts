@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { ProductGateway } from './gateway/product.gateway';
@@ -29,12 +29,11 @@ export class ProductsService {
     );
     const byUuid = new Map(products.map((product) => [product.uuid, product]));
     const brands = await this.loadBrands(products);
-    const items = offers.items
-      .map((offer) => {
-        const product = byUuid.get(offer.productUuid);
-        return product ? this.compose(offer, product, brands.get(product.brandCode) ?? null) : null;
-      })
-      .filter((offer): offer is PublicOfferCard => offer !== null);
+    const items = offers.items.map((offer) => {
+      const product = byUuid.get(offer.productUuid);
+      if (!product) throw new BadGatewayException('Store offer references a missing catalog product');
+      return this.compose(offer, product, brands.get(product.brandCode) ?? null);
+    });
     return { items, meta: offers.meta };
   }
   async findOfferByUuid(uuid: string, query: ProductsQueryInput = {}): Promise<PublicOfferDetail> {
@@ -43,20 +42,16 @@ export class ProductsService {
     const brands = await this.loadBrands([product]);
     const brand = brands.get(product.brandCode) ?? null;
     const offer = this.compose(detail.offer, product, brand);
-    if (!offer) throw new Error('Store offer references an unavailable catalog variant');
     const siblingOffers = detail.siblingOffers
       .filter((item) => item.uuid !== offer.uuid)
-      .map((item) => this.compose(item, product, brand))
-      .filter((item): item is PublicOfferCard => item !== null);
+      .map((item) => this.compose(item, product, brand));
     return { offer, siblingOffers, categories: detail.categories };
   }
   private createStoreQuery(query: ProductsQueryInput): StoreQueryInput {
     return {
       ...query,
       shopUuid: this.config.getOrThrow<string>('STOREFRONT_SHOP_UUID'),
-      productStatus: 'active',
       productShowing: true,
-      variantStatus: 'active',
       variantShowing: true,
       availableMin: 1,
     };
@@ -66,9 +61,9 @@ export class ProductsService {
     const brands = await Promise.all(codes.map((code) => this.productGateway.getBrand(code)));
     return new Map(brands.map((brand) => [brand.code, brand]));
   }
-  private compose(offer: StoreOfferEntity, product: ProductEntity, brand: BrandEntity | null): PublicOfferCard | null {
+  private compose(offer: StoreOfferEntity, product: ProductEntity, brand: BrandEntity | null): PublicOfferCard {
     const variant = product.variants.find((item) => item.uuid === offer.variantUuid);
-    if (product.status !== 'active' || !variant || variant.status !== 'active') return null;
+    if (!variant) throw new BadGatewayException('Store offer references a missing catalog variant');
     return {
       uuid: offer.uuid,
       offerUuid: offer.uuid,
