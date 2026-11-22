@@ -44,9 +44,9 @@ export class ProductsService {
     const offer = this.compose(detail.offer, product, brand);
     if (!offer) throw new Error('Store offer references an unavailable catalog variant');
     const siblingOffers = detail.siblingOffers
+      .filter((item) => item.uuid !== offer.uuid)
       .map((item) => this.compose(item, product, brand))
-      .filter((item): item is PublicOfferCard => item !== null)
-      .sort((left, right) => Number(right.uuid === offer.uuid) - Number(left.uuid === offer.uuid));
+      .filter((item): item is PublicOfferCard => item !== null);
     return { offer, siblingOffers, categories: detail.categories };
   }
   private createStoreQuery(query: ProductsQueryInput): StoreQueryInput {
