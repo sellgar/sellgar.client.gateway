@@ -34,6 +34,11 @@ export class StoreQueryDto {
 
   @Expose()
   @ValidateIf((_object, value) => value !== undefined)
+  @IsUUID(undefined, { each: true })
+  categoryUuid?: string | string[];
+
+  @Expose()
+  @ValidateIf((_object, value) => value !== undefined)
   @IsIn(['active', 'disabled', 'archived'])
   productStatus?: 'active' | 'disabled' | 'archived';
 

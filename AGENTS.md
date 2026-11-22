@@ -50,6 +50,13 @@ query и использует FTS Store, включая артикулы. Пуб
 каталога у product_srv. Политика витрины не зашивается в общий Store service.
 STOREFRONT_SHOP_UUID обязателен и проверяется как UUID при запуске gateway.
 
+`GET /v1/products?categoryUuid=<UUID>&search=<text>` принимает необязательную категорию.
+Для нескольких категорий параметр повторяется: `?categoryUuid=<UUID1>&categoryUuid=<UUID2>`.
+Оба DTO и StoreQueryInput передают UUID или массив UUID без вычисления дерева в BFF.
+Store выбирает всю ветку; shopUuid и условия витрины остаются обязательными.
+Невалидный categoryUuid (включая элемент массива) даёт 400 до RMQ; отсутствие сохраняет
+прежнюю выдачу, неизвестная/пустая/чужая категория — пустой список.
+
 Для списка и карточки Client gateway запрашивает Product с
 `withEmptyProperties=false`. Product выбирает назначенные характеристики с
 существующими значениями в БД. BFF и frontend не фильтруют поля повторно;

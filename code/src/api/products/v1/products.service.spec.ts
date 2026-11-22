@@ -198,6 +198,7 @@ describe(ProductsService.name, () => {
   it('adds storefront policy to the same flat query for lists and offer details', async () => {
     const { service, store } = setup();
     const policy = {
+      categoryUuid: 'be250838-85f9-41fa-b9f3-99aba3590640',
       search: 'BLUE-S',
       shopUuid,
       productStatus: 'active',
@@ -206,9 +207,9 @@ describe(ProductsService.name, () => {
       variantShowing: true,
       availableMin: 1,
     } as const;
-    await service.findAll({ search: 'BLUE-S' });
+    await service.findAll({ search: 'BLUE-S', categoryUuid: policy.categoryUuid });
     expect(store.findOffersAll).toHaveBeenCalledWith(policy);
-    await service.findOfferByUuid('offer', { search: 'BLUE-S' });
+    await service.findOfferByUuid('offer', { search: 'BLUE-S', categoryUuid: policy.categoryUuid });
     expect(store.findOfferByUuid).toHaveBeenCalledWith('offer', policy);
   });
   it('does not allow incoming query fields to override the configured shop or storefront policy', async () => {
