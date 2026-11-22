@@ -45,12 +45,19 @@ describe('Storefront category query HTTP contract', () => {
   it('passes category and search through both DTOs while enforcing storefront scope', async () => {
     const result = await request(app.getHttpServer())
       .get('/v1/products')
-      .query({ categoryUuid, search: '  телефон  ', shopUuid: categoryUuid, productShowing: false, availableMin: 0 })
+      .query({
+        categoryUuid,
+        brandCode: 'apple',
+        search: '  телефон  ',
+        shopUuid: categoryUuid,
+        productShowing: false,
+        availableMin: 0,
+      })
       .expect(200);
 
     expect(send).toHaveBeenCalledWith(
       { cmd: 'store.offer.getAll' },
-      { query: expect.objectContaining({ ...policy, categoryUuid, search: 'телефон' }) },
+      { query: expect.objectContaining({ ...policy, categoryUuid, brandCode: 'apple', search: 'телефон' }) },
     );
     expect(result.body).toEqual({ data: [], meta: { totalRows: 0 } });
   });
@@ -79,4 +86,22 @@ describe('Storefront category query HTTP contract', () => {
       expect(send).not.toHaveBeenCalled();
     },
   );
+
+  it('passes several brands to Store alongside category and storefront scope', async () => {
+    await request(app.getHttpServer())
+      .get('/v1/products')
+      .query({ brandCode: ['apple', 'samsung'], categoryUuid })
+      .expect(200);
+    expect(send).toHaveBeenCalledWith(
+      { cmd: 'store.offer.getAll' },
+      {
+        query: expect.objectContaining({ ...policy, categoryUuid, brandCode: ['apple', 'samsung'] }),
+      },
+    );
+  });
+
+  it.each(['', 'a'.repeat(257)])('rejects invalid brand codes before Store: %s', async (brandCode) => {
+    await request(app.getHttpServer()).get('/v1/products').query({ brandCode }).expect(400);
+    expect(send).not.toHaveBeenCalled();
+  });
 });

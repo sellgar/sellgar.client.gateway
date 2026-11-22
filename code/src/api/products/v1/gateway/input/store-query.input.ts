@@ -3,6 +3,7 @@ export interface StoreQueryInput {
   shopUuid?: string;
   productUuid?: string;
   categoryUuid?: string | string[];
+  brandCode?: string | string[];
   productStatus?: 'active' | 'disabled' | 'archived';
   variantStatus?: 'active' | 'disabled' | 'archived';
   productShowing?: boolean;

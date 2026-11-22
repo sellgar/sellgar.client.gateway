@@ -1,5 +1,5 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
 export class ProductsQueryDto {
   @Expose()
@@ -13,4 +13,11 @@ export class ProductsQueryDto {
   @ValidateIf((_object, value) => value !== undefined)
   @IsUUID(undefined, { each: true })
   categoryUuid?: string | string[];
+
+  @Expose()
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsString({ each: true })
+  @MinLength(1, { each: true })
+  @MaxLength(256, { each: true })
+  brandCode?: string | string[];
 }
