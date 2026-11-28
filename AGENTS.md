@@ -37,7 +37,7 @@ Store API возвращает offers[].records[]: uuid, article, clarifications
 
 AMQP_PRODUCT_SRV_COMMAND_QUEUE должен адресовать текущий product_srv.
 Storefront /v1/products и /v1/offers/:uuid передают records[] для выбора
-конкретной учетной записи клиентом. Cart находится в отдельной ветке cart_srv/v1; Order не реализован.
+конкретной учетной записи клиентом. Cart находится в ветке cart_srv/v1, Order — в order_srv/v1.
 
 ## Фильтры витрины
 
@@ -105,3 +105,19 @@ BFF не рассчитывает собственный диапазон. Store
 - Отдельный Docker target `tests` и job `unit` обязательны; сборка и деплой зависят от успешных юнит-тестов.
 - Миграционного образа и job нет.
 - CI/CD и конфигурация описаны в разделе «CI и доставка» README. Python/smoke wrappers удалены; команды Helm/kubectl видны в общих workflows.
+
+## Order / checkout
+
+- `src/api/order_srv/v1` предоставляет `/v1/orders/drafts`, `/v1/orders/:uuid`,
+  `/:uuid/confirm`, `/:uuid/pay`. Scope определяется SessionGuard и STOREFRONT_SHOP_UUID,
+  owner/shop и деньги из HTTP input не передаются в Order.
+- `commandId` приходит от клиента и сохраняется при повторе одной операции. Это ключ
+  идемпотентности, а не источник полномочий. Cart продолжает использовать свой контракт.
+- Персональная ссылка всех покупателей содержит capability в URL fragment. Gateway получает
+  её только в POST body `/v1/order-links/resolve` или `/v1/order-links/pay`. Проверяет UUID
+  заказа и магазин; владелец для linked pay берётся только из проверенного ответа Order.
+- Публичный снимок исключает ownerUuid, cartUuid и expectedItemVersion. Ответы Order
+  проверяются и получают Cache-Control: no-store. Capability не выводить в логи.
+- `payment.test.result` остаётся внутренней интеграцией, HTTP endpoint для неё запрещён.
+- Нужен AMQP_ORDER_SRV_COMMAND_QUEUE. Проверки: `yarn build`, `yarn test --runInBand`,
+  workspace `node agent/scripts/smoke-order-checkout.cjs` после сборки четырёх сервисов и gateway.

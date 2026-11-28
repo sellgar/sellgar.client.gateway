@@ -1,0 +1,1 @@
+export const ORDER_COMMAND_SERVICE = Symbol('ORDER_COMMAND_SERVICE');

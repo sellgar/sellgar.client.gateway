@@ -16,6 +16,7 @@ describe('Storefront shop configuration', () => {
     AMQP_PRODUCT_SRV_COMMAND_QUEUE: 'test.product',
     API_MEDIA_SRV: 'http://localhost:5050',
     AMQP_CART_SRV_COMMAND_QUEUE: 'cart.test',
+    AMQP_ORDER_SRV_COMMAND_QUEUE: 'order.test',
     AMQP_IDENTITY_SRV_COMMAND_QUEUE: 'identity.test',
     AMQP_CLIENT_GATEWAY_CART_EVENT_QUEUE: 'cart.events.test',
     AMQP_EVENTS_EXCHANGE: 'event.test',
